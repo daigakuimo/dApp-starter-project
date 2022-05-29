@@ -20,6 +20,7 @@ const App = () => {
   /* ABIの内容を参照する変数を作成 */
   const contractABI = abi.abi;
 
+  const [contractBalance, setContractBalance] = useState("");
 
   const getAllWaves = async () => {
     const { ethereum } = window;
@@ -128,6 +129,17 @@ const App = () => {
       });
       console.log("Connected: ", accounts[0]);
       setCurrentAccount(accounts[0]);
+
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
+      /* ABIを参照 */
+      const wavePortalContract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
+      let balance = await provider.getBalance(wavePortalContract.address);
+      setContractBalance(balance);
     } catch (error) {
       console.log(error);
     }
@@ -148,8 +160,9 @@ const App = () => {
         let count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
 
-        let contractBalance = await provider.getBalance(wavePortalContract.address);
-        console.log("Contract balance:", ethers.utils.formatEther(contractBalance));
+        let balance = await provider.getBalance(wavePortalContract.address);
+        console.log("Contract balance:", ethers.utils.formatEther(balance));
+        setContractBalance(balance);
 
         /* コントラクトに👋（wave）を書き込む */
         const waveTxn = await wavePortalContract.wave(messageValue, {
@@ -165,7 +178,7 @@ const App = () => {
 
         let contractBalancePost = await provider.getBalance(wavePortalContract.address);
 
-        if (contractBalancePost < contractBalance) {
+        if (contractBalancePost < balance) {
           console.log("user won");
         } else {
           console.log("lose");
@@ -176,6 +189,7 @@ const App = () => {
           ethers.utils.formatEther(contractBalancePost)
         );
 
+        setContractBalance(contractBalancePost);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -209,6 +223,11 @@ const App = () => {
           </span>
         </div>
         <br />
+        {currentAccount && (
+          <div className="header">
+            ETH：{ethers.utils.formatEther(contractBalance)}
+          </div>
+        )}
         {/* ウォレットコネクトのボタンを実装 */}
         {!currentAccount && (
           <button className="waveButton" onClick={connectWallet}>

@@ -20,7 +20,7 @@ const App = () => {
   /* ABIの内容を参照する変数を作成 */
   const contractABI = abi.abi;
 
-  const [contractBalance, setContractBalance] = useState("");
+  const [accountBalance, setAccountBalance] = useState(ethers.BigNumber.from(0));
 
   const getAllWaves = async () => {
     const { ethereum } = window;
@@ -109,6 +109,12 @@ const App = () => {
         console.log("Found an authorized account:", account);
         setCurrentAccount(account);
         getAllWaves();
+
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+
+        let balance = await signer.getBalance();
+        setAccountBalance(balance);
       } else {
         console.log("No authorized account found");
       }
@@ -132,14 +138,9 @@ const App = () => {
 
       const provider = new ethers.providers.Web3Provider(ethereum);
       const signer = provider.getSigner();
-      /* ABIを参照 */
-      const wavePortalContract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-      let balance = await provider.getBalance(wavePortalContract.address);
-      setContractBalance(balance);
+
+      let balance = await signer.getBalance();
+      setAccountBalance(balance);
     } catch (error) {
       console.log(error);
     }
@@ -162,7 +163,6 @@ const App = () => {
 
         let balance = await provider.getBalance(wavePortalContract.address);
         console.log("Contract balance:", ethers.utils.formatEther(balance));
-        setContractBalance(balance);
 
         /* コントラクトに👋（wave）を書き込む */
         const waveTxn = await wavePortalContract.wave(messageValue, {
@@ -189,7 +189,8 @@ const App = () => {
           ethers.utils.formatEther(contractBalancePost)
         );
 
-        setContractBalance(contractBalancePost);
+        let b = await signer.getBalance();
+        setAccountBalance(b);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -225,7 +226,7 @@ const App = () => {
         <br />
         {currentAccount && (
           <div className="header">
-            ETH：{ethers.utils.formatEther(contractBalance)}
+            ETH：{ethers.utils.formatEther(accountBalance)}
           </div>
         )}
         {/* ウォレットコネクトのボタンを実装 */}
